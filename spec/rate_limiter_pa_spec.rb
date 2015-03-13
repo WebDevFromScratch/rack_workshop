@@ -14,8 +14,8 @@ describe Rack::RateLimiterPa do
   end
 
   context 'X-RateLimit-Limit header' do
-    it 'is a string "0" if not set' do
-      expect(response.headers['X-RateLimit-Limit']).to eq('0')
+    it 'is a string "20" if not set' do
+      expect(response.headers['X-RateLimit-Limit']).to eq('20')
     end
 
     it 'is equal to a passed value if set' do
@@ -40,6 +40,13 @@ describe Rack::RateLimiterPa do
       2.times { request.get('/') }
 
       expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(57)
+    end
+
+    it 'responds with "429 Too Many Requests" if limit is exceeded' do
+      60.times { request.get('/') }
+
+      expect(response).not_to be_ok
+      expect(response.status).to eq(429)
     end
   end
 end
