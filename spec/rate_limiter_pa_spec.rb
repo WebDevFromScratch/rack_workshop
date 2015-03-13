@@ -29,4 +29,23 @@ describe Rack::RateLimiterPa do
       expect(response.headers['X-RateLimit-Limit'].to_i).to eq(60)
     end
   end
+
+  context 'X-RateLimit-Remaining header' do
+    it 'is present' do
+      stack = Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' }))
+      request = Rack::MockRequest.new(stack)
+      response = request.get('/')
+
+      expect(response.headers['X-RateLimit-Remaining']).to be_truthy
+    end
+
+    it 'decreases by one with each request' do
+      stack = Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' }))
+      request = Rack::MockRequest.new(stack)
+      request.get('/')
+      response = request.get('/')
+
+      expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(58)
+    end
+  end
 end
