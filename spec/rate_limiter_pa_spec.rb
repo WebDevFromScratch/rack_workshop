@@ -22,11 +22,11 @@ describe Rack::RateLimiterPa do
     end
 
     it 'is equal to a passed value if set' do
-      stack = Rack::RateLimiterPa.new(app, { limit: 60 })
+      stack = Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' }))
       request = Rack::MockRequest.new(stack)
       response = request.get('/')
 
-      expect(response.headers['X-RateLimit-Limit']).to eq(60)
+      expect(response.headers['X-RateLimit-Limit'].to_i).to eq(60)
     end
   end
 end
