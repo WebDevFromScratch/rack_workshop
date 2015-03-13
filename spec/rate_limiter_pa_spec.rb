@@ -1,9 +1,9 @@
 require 'rack/test'
 require 'spec_helper'
 
-describe RateLimiterPa do
+describe Rack::RateLimiterPa do
   let(:app) { lambda { |env| [200, {'Content-Type' => 'text/plain'}, ['OK']]} }
-  let(:stack) { Rack::Lint.new(RateLimiterPa.new(app)) }
+  let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app)) }
   let(:request) { Rack::MockRequest.new(stack) }
 
   context 'issue a request' do
@@ -22,7 +22,7 @@ describe RateLimiterPa do
     end
 
     it 'is equal to a passed value if set' do
-      stack = RateLimiterPa.new(app, { limit: 60 })
+      stack = Rack::RateLimiterPa.new(app, { limit: 60 })
       request = Rack::MockRequest.new(stack)
       response = request.get('/')
 
