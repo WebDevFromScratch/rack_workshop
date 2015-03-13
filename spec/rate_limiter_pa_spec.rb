@@ -7,13 +7,11 @@ describe Rack::RateLimiterPa do
   let(:request) { Rack::MockRequest.new(stack) }
   let(:response) { request.get('/') }
 
-  context 'issue a request' do
-    it 'response should be okay' do
-      expect(response).to be_ok
-    end
+  it 'response should be okay' do
+    expect(response).to be_ok
   end
 
-  context 'X-RateLimit-Limit header' do
+  describe 'X-RateLimit-Limit header' do
     it 'is a string "20" if not set' do
       expect(response.headers['X-RateLimit-Limit']).to eq('20')
     end
@@ -27,7 +25,7 @@ describe Rack::RateLimiterPa do
     end
   end
 
-  context 'X-RateLimit-Remaining header' do
+  describe 'X-RateLimit-Remaining header' do
     let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' })) }
     let(:request) { Rack::MockRequest.new(stack) }
     let(:response) { request.get('/') }
