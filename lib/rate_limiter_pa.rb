@@ -1,7 +1,7 @@
 require "rate_limiter_pa/version"
 
 class RateLimiterPa
-  def initialize(app, options={})
+  def initialize(app, options={ limit: '0' })
     @app = app
     @options = options
   end

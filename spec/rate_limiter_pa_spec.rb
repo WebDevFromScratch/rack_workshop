@@ -3,7 +3,7 @@ require 'spec_helper'
 
 describe RateLimiterPa do
   let(:app) { lambda { |env| [200, {'Content-Type' => 'text/plain'}, ['OK']]} }
-  let(:stack) { RateLimiterPa.new(app, {}) }
+  let(:stack) { Rack::Lint.new(RateLimiterPa.new(app)) }
   let(:request) { Rack::MockRequest.new(stack) }
 
   context 'issue a request' do
@@ -18,7 +18,7 @@ describe RateLimiterPa do
     it 'is a nil if not set' do
       response = request.get('/')
 
-      expect(response.headers['X-RateLimit-Limit']).to be(nil)
+      expect(response.headers['X-RateLimit-Limit']).to eq('0')
     end
 
     it 'is equal to a passed value if set' do
