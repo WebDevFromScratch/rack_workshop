@@ -50,20 +50,11 @@ describe Rack::RateLimiterPa do
     end
 
     it 'resets after an hour after first request' do
-      # this test fails if REMOTE_ADDR not given
-      3.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
+      3.times { request.get('/') }
       Timecop.freeze(3650)
-      request.get('/', { "REMOTE_ADDR" => "10.0.0.1" })
+      response = request.get('/')
 
       expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(59)
-    end
-
-    it 'TESTS' do
-      3.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
-      2.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.2" }) }
-      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
-
-      expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(57)
     end
   end
 
@@ -105,6 +96,56 @@ describe Rack::RateLimiterPa do
         response = request.get('/')
 
         expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(1800)
+      end
+    end
+  end
+
+  describe 'Client Detection' do
+    context 'without a block' do
+      let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app)) }
+      let(:request) { Rack::MockRequest.new(stack) }
+
+      it 'correctly uses IP for identification' do
+        5.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
+        2.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.2" }) }
+        response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
+
+        expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(17)
+      end
+    end
+
+    context 'with a block' do
+      context 'that returns nil' do
+        let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app) { nil }) }
+        let(:request) { Rack::MockRequest.new(stack) }
+
+        it 'does not use limit headers' do
+          response = request.get('/')
+
+          expect(response.headers['X-RateLimit-Limit']).to be(nil)
+          expect(response.headers['X-RateLimit-Remaining']).to be(nil)
+          expect(response.headers['X-RateLimit-Reset']).to be(nil)
+        end
+      end
+
+      context 'that returns something' do
+        let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app) { 'something' }) }
+        let(:request) { Rack::MockRequest.new(stack) }
+
+        it 'uses token given by the block for identification' do
+          request.get('/')
+          response = request.get('/')
+
+          expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(18)
+        end
+
+        it 'uses token given by the block for identification, even if the IP is given too' do
+          5.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
+          2.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.2" }) }
+          response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
+
+          expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(12)
+        end
       end
     end
   end

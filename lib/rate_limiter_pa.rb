@@ -5,33 +5,47 @@ require 'pry'
 
 module Rack
   class RateLimiterPa
-    def initialize(app, options = {})
+    def initialize(app, options = {}, &block)
+      if block_given?
+        @block_given = true
+      end
+
       options = { limit: '20', reset_in: '3600' }.merge(options)
       @app = app
       @limit_total = options[:limit].to_i
       @limit_remaining = @limit_total
       @reset_in = options[:reset_in].to_i
       @limit_reset = Time.now + @reset_in
-      @ip_addresses = []
+      @ids = []
+      @block = block
     end
 
     def call(env)
-      set_ip_variables(env)
-
-      adjust_limit_remaining
-      adjust_limit_reset_left
-
       if limit_reached?
-        status = 429
-        headers = {}
-        response = ['Too many requests']
+        return [429, {}, ['Too many requests']]
       else
         status, headers, response = @app.call(env)
       end
 
+      if @block_given
+        if @block.call == nil
+          return [status, headers, response]
+        else
+          set_id_as_token(env)
+          set_id_variables(env)
+        end
+      else
+        set_id_as_ip(env)
+        set_id_variables(env)
+      end
+
+      adjust_limit_remaining
+      adjust_limit_reset_left
+
       if reset_time_reached?
         @limit_reset = @limit_reset + @reset_in
         @limit_remaining = @limit_total
+        adjust_limit_remaining
         adjust_limit_reset_left
       end
 
@@ -40,19 +54,25 @@ module Rack
       [status, headers, response]
     end
 
-    def set_ip_variables(env)
-      @ip = env['REMOTE_ADDR']
+    def set_id_as_token(env)
+      @id = @block.call
+    end
 
-      if @ip_addresses.any? { |ip| ip[:ip] == @ip }
-        @current_ip = @ip_addresses.find { |ip| ip[:ip] == @ip }
+    def set_id_as_ip(env)
+      @id = env['REMOTE_ADDR']
+    end
+
+    def set_id_variables(env)
+      if @ids.any? { |id| id[:id] == @id }
+        @current_id = @ids.find { |id| id[:id] == @id }
       else
-        ip_vars = { ip: @ip, limit_remaining: @limit_total, limit_reset: @limit_reset }
-        @ip_addresses << ip_vars
-        @current_ip = ip_vars
+        id_vars = { id: @id, limit_remaining: @limit_total, limit_reset: @limit_reset }
+        @ids << id_vars
+        @current_id = id_vars
       end
 
-      @limit_remaining = @current_ip[:limit_remaining]
-      @limit_reset = @current_ip[:limit_reset]
+      @limit_remaining = @current_id[:limit_remaining]
+      @limit_reset = @current_id[:limit_reset]
     end
 
     def add_headers(headers)
@@ -75,12 +95,12 @@ module Rack
 
     def adjust_limit_remaining
       @limit_remaining -= 1
-      @current_ip[:limit_remaining] = @limit_remaining
+      @current_id[:limit_remaining] = @limit_remaining if @current_id
     end
 
     def adjust_limit_reset_left
       @limit_reset_left = @limit_reset - Time.now
-      @current_ip[:limit_reset] = @limit_reset
+      @current_id[:limit_reset] = @limit_reset if @current_id
     end
 
     def limit_reached?
