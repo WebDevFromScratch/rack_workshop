@@ -1,3 +1,4 @@
+require 'timecop'
 require 'rack/test'
 require 'spec_helper'
 
@@ -45,6 +46,46 @@ describe Rack::RateLimiterPa do
 
       expect(response).not_to be_ok
       expect(response.status).to eq(429)
+    end
+
+    it 'resets after an hour after first request' do
+      3.times { request.get('/') }
+      Timecop.freeze(3650)
+      request.get('/')
+
+      expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(59)
+    end
+  end
+
+  describe 'X-RateLimit-Reset' do
+    it 'is present' do
+      expect(response.headers['X-RateLimit-Reset']).to be_truthy
+    end
+
+    context 'shows the correct reset time' do
+      let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' })) }
+      let(:request) { Rack::MockRequest.new(stack) }
+      let(:response) { request.get('/') }
+
+      before do
+        request.get('/')
+      end
+
+      it 'right after the initial request' do
+        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3600)
+      end
+
+      it 'after some time passed' do
+        Timecop.freeze(1800)
+        request.get('/')
+        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(1800)
+      end
+
+      it 'resets after an hour passed' do
+        Timecop.freeze(3650)
+        request.get('/')
+        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3550)
+      end
     end
   end
 end
