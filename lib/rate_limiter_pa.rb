@@ -16,18 +16,7 @@ module Rack
     end
 
     def call(env)
-      @ip = env['REMOTE_ADDR']
-
-      if @ip_addresses.any? { |ip| ip[:ip] == @ip }
-        @current_ip = @ip_addresses.find { |ip| ip[:ip] == @ip }
-      else
-        ip_vars = { ip: @ip, limit_remaining: @limit_total, limit_reset: @limit_reset }
-        @ip_addresses << ip_vars
-        @current_ip = ip_vars
-      end
-
-      @limit_remaining = @current_ip[:limit_remaining]
-      @limit_reset = @current_ip[:limit_reset]
+      set_ip_variables(env)
 
       adjust_limit_remaining
       adjust_limit_reset_left
@@ -49,6 +38,21 @@ module Rack
       add_headers(headers)
 
       [status, headers, response]
+    end
+
+    def set_ip_variables(env)
+      @ip = env['REMOTE_ADDR']
+
+      if @ip_addresses.any? { |ip| ip[:ip] == @ip }
+        @current_ip = @ip_addresses.find { |ip| ip[:ip] == @ip }
+      else
+        ip_vars = { ip: @ip, limit_remaining: @limit_total, limit_reset: @limit_reset }
+        @ip_addresses << ip_vars
+        @current_ip = ip_vars
+      end
+
+      @limit_remaining = @current_ip[:limit_remaining]
+      @limit_reset = @current_ip[:limit_reset]
     end
 
     def add_headers(headers)

@@ -55,17 +55,13 @@ describe Rack::RateLimiterPa do
       Timecop.freeze(3650)
       request.get('/', { "REMOTE_ADDR" => "10.0.0.1" })
 
-
       expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(59)
     end
 
     it 'TESTS' do
-      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.1" })
       3.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
+      2.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.2" }) }
       response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
-      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
-      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
-      # this needs improvements...
 
       expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(57)
     end
