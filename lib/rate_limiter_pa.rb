@@ -12,9 +12,23 @@ module Rack
       @limit_remaining = @limit_total
       @reset_in = options[:reset_in].to_i
       @limit_reset = Time.now + @reset_in
+      @ip_addresses = []
     end
 
     def call(env)
+      @ip = env['REMOTE_ADDR']
+
+      if @ip_addresses.any? { |ip| ip[:ip] == @ip }
+        @current_ip = @ip_addresses.find { |ip| ip[:ip] == @ip }
+      else
+        ip_vars = { ip: @ip, limit_remaining: @limit_total, limit_reset: @limit_reset }
+        @ip_addresses << ip_vars
+        @current_ip = ip_vars
+      end
+
+      @limit_remaining = @current_ip[:limit_remaining]
+      @limit_reset = @current_ip[:limit_reset]
+
       adjust_limit_remaining
       adjust_limit_reset_left
 
@@ -57,6 +71,12 @@ module Rack
 
     def adjust_limit_remaining
       @limit_remaining -= 1
+      @current_ip[:limit_remaining] = @limit_remaining
+    end
+
+    def adjust_limit_reset_left
+      @limit_reset_left = @limit_reset - Time.now
+      @current_ip[:limit_reset] = @limit_reset
     end
 
     def limit_reached?
@@ -65,10 +85,6 @@ module Rack
 
     def reset_time_reached?
       @limit_reset_left <= 0
-    end
-
-    def adjust_limit_reset_left
-      @limit_reset_left = @limit_reset - Time.now
     end
   end
 end

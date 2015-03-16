@@ -50,11 +50,24 @@ describe Rack::RateLimiterPa do
     end
 
     it 'resets after an hour after first request' do
-      3.times { request.get('/') }
+      # this test fails if REMOTE_ADDR not given
+      3.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
       Timecop.freeze(3650)
-      request.get('/')
+      request.get('/', { "REMOTE_ADDR" => "10.0.0.1" })
+
 
       expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(59)
+    end
+
+    it 'TESTS' do
+      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.1" })
+      3.times { request.get('/', { "REMOTE_ADDR" => "10.0.0.1" }) }
+      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
+      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
+      response = request.get('/', { "REMOTE_ADDR" => "10.0.0.2" })
+      # this needs improvements...
+
+      expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(57)
     end
   end
 
@@ -79,12 +92,14 @@ describe Rack::RateLimiterPa do
       it 'after some time passed' do
         Timecop.freeze(1800)
         request.get('/')
+
         expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(1800)
       end
 
       it 'resets after an hour passed' do
         Timecop.freeze(3650)
         request.get('/')
+
         expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3550)
       end
 
