@@ -42,7 +42,7 @@ describe Rack::RateLimiterPa do
     end
 
     it 'responds with "429 Too Many Requests" if limit is exceeded' do
-      60.times { request.get('/') }
+      61.times { request.get('/') }
 
       expect(response).not_to be_ok
       expect(response.status).to eq(429)
@@ -63,7 +63,7 @@ describe Rack::RateLimiterPa do
     end
 
     context 'shows the correct reset time' do
-      let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app, { limit: '60' })) }
+      let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app)) }
       let(:request) { Rack::MockRequest.new(stack) }
       let(:response) { request.get('/') }
 
@@ -85,6 +85,14 @@ describe Rack::RateLimiterPa do
         Timecop.freeze(3650)
         request.get('/')
         expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3550)
+      end
+
+      it 'works with other than default passed values' do
+        stack = Rack::Lint.new(Rack::RateLimiterPa.new(app, { reset_in: '1800' }))
+        request = Rack::MockRequest.new(stack)
+        response = request.get('/')
+
+        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(1800)
       end
     end
   end

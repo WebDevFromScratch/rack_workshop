@@ -5,11 +5,13 @@ require 'pry'
 
 module Rack
   class RateLimiterPa
-    def initialize(app, options={ limit: '20' })
+    def initialize(app, options = {})
+      options = { limit: '20', reset_in: '3600' }.merge(options)
       @app = app
       @limit_total = options[:limit]
       @limit_remaining = @limit_total
-      @limit_reset = 1.hour.from_now
+      @reset_in = options[:reset_in].to_i
+      @limit_reset = Time.now + @reset_in
     end
 
     def call(env)
@@ -28,7 +30,7 @@ module Rack
       headers.merge! 'X-RateLimit-Reset' => @limit_reset_left.to_s
 
       if @limit_reset_left <= 0
-        @limit_reset += 1.hour
+        @limit_reset = @limit_reset + @reset_in
         @limit_remaining = @limit_total
       end
 
