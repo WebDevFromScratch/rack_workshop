@@ -46,6 +46,7 @@ describe Rack::RateLimiterPa do
 
       expect(response).not_to be_ok
       expect(response.status).to eq(429)
+      expect(response.body).to eq('Too many requests')
     end
 
     it 'resets after an hour after first request' do
