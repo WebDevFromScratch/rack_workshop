@@ -1,13 +1,13 @@
 class DefaultStore
   def initialize
-    @store = {}
+    @data = {}
   end
 
   def get(attr)
-    @store[attr]
+    @data[attr]
   end
 
   def set(attr, value)
-    @store[attr] = value
+    @data[attr] = value
   end
 end
