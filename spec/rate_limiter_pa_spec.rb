@@ -1,6 +1,7 @@
 require 'timecop'
 require 'rack/test'
 require 'spec_helper'
+require 'rate_limiter_pa/default_store'
 
 describe Rack::RateLimiterPa do
   let(:app) { lambda { |env| [200, {'Content-Type' => 'text/plain'}, ['OK']]} }
@@ -116,7 +117,7 @@ describe Rack::RateLimiterPa do
 
     context 'with a block' do
       context 'that returns nil' do
-        let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app) { nil }) }
+        let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app) { }) }
         let(:request) { Rack::MockRequest.new(stack) }
 
         it 'does not use limit headers' do
@@ -147,6 +148,20 @@ describe Rack::RateLimiterPa do
           expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(12)
         end
       end
+    end
+  end
+
+  describe 'Custom store' do
+    let(:store) { double(:store, get: { limit_remaining: 10, limit_reset: Time.now + 1800 }) }
+    let(:stack) { Rack::Lint.new(Rack::RateLimiterPa.new(app, { store: store }) { 'something' }) }
+    let(:request) { Rack::MockRequest.new(stack) }
+
+    it 'works correctly with custom store' do
+      2.times { request.get('/') }
+      response = request.get('/')
+
+      expect(response.headers['X-RateLimit-Remaining'].to_i).to eq(7)
+      expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(1800)
     end
   end
 end

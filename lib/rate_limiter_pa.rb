@@ -7,9 +7,7 @@ require 'pry'
 module Rack
   class RateLimiterPa
     def initialize(app, options = {}, &block)
-      if block_given?
-        @block_given = true
-      end
+      @block_given = true if block_given?
 
       options = { limit: '20', reset_in: '3600', store: DefaultStore.new }.merge(options)
       @app = app
@@ -58,6 +56,8 @@ module Rack
         @store.set(@id, id_vars)
         @current_id = @store.get(@id)
       end
+
+      # binding.pry
 
       @limit_remaining = @current_id[:limit_remaining]
       @limit_reset = @current_id[:limit_reset]
