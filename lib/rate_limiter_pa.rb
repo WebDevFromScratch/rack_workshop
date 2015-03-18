@@ -44,7 +44,7 @@ module Rack
     end
 
     def set_id_as_ip(env)
-      @id = env['REMOTE_ADDR']
+      @id = env['REMOTE_ADDR'] || 0
     end
 
     def get_or_set_id_variables(env)
