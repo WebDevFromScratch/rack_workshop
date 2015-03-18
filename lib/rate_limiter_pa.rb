@@ -81,7 +81,7 @@ module Rack
     end
 
     def reset_limits
-      @limit_reset += @reset_in
+      @limit_reset = Time.now + @reset_in
       @limit_remaining = @limit_total
       adjust_limit_reset_left
     end

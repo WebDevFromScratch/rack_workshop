@@ -88,7 +88,7 @@ describe Rack::RateLimiterPa do
         Timecop.freeze(3650)
         request.get('/')
 
-        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3550)
+        expect(response.headers['X-RateLimit-Reset'].to_f).to be_within(0.01).of(3600)
       end
 
       it 'works with other than default passed values' do
