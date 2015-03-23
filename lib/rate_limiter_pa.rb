@@ -7,10 +7,8 @@ module Rack
       options = { limit: 20, reset_in: 3600, store: DefaultStore.new }.merge(options)
       @app = app
       @limit_total = options[:limit].to_i
-      @limit_remaining = @limit_total
       @reset_in = options[:reset_in].to_i
       @limit_reset = Time.now + @reset_in
-      @ids = []
       @block = block
       @store = options[:store]
     end
