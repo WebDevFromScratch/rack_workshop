@@ -1,5 +1,3 @@
-require 'rubygems'
-require 'active_support/core_ext/numeric/time'
 require 'rate_limiter_pa/version'
 require 'rate_limiter_pa/default_store'
 
