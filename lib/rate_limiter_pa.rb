@@ -4,8 +4,6 @@ require 'rate_limiter_pa/default_store'
 module Rack
   class RateLimiterPa
     def initialize(app, options = {}, &block)
-      @block_given = true if block_given?
-
       options = { limit: 20, reset_in: 3600, store: DefaultStore.new }.merge(options)
       @app = app
       @limit_total = options[:limit].to_i
@@ -21,9 +19,9 @@ module Rack
       return [429, {}, ['Too many requests']] if limit_reached?
       status, headers, response = @app.call(env)
 
-      if @block_given && @block.call == nil
+      if @block && @block.call == nil
         return [status, headers, response]
-      elsif @block_given
+      elsif @block
         set_id_as_token(env)
       else
         set_id_as_ip(env)
