@@ -8,7 +8,7 @@ module Rack
     def initialize(app, options = {}, &block)
       @block_given = true if block_given?
 
-      options = { limit: '20', reset_in: '3600', store: DefaultStore.new }.merge(options)
+      options = { limit: 20, reset_in: 3600, store: DefaultStore.new }.merge(options)
       @app = app
       @limit_total = options[:limit].to_i
       @limit_remaining = @limit_total

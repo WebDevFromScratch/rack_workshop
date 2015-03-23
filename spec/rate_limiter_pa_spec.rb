@@ -22,7 +22,7 @@ describe Rack::RateLimiterPa do
     end
 
     context 'if specifically set' do
-      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, { limit: '60' })) }
+      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, { limit: 60 })) }
 
       it 'is equal to the set value' do
         expect(last_response.headers['X-RateLimit-Limit'].to_i).to eq(60)
@@ -86,7 +86,7 @@ describe Rack::RateLimiterPa do
     end
 
     context 'if specifically set' do
-      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, reset_in: '1800')) }
+      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, reset_in: 1800)) }
 
       it 'works correctly' do
         expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(1800)
