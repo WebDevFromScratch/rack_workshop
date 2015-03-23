@@ -56,8 +56,6 @@ module Rack
         @current_id = @store.get(@id)
       end
 
-      # binding.pry
-
       @limit_remaining = @current_id[:limit_remaining]
       @limit_reset = @current_id[:limit_reset]
     end
@@ -97,7 +95,7 @@ module Rack
     end
 
     def limit_reached?
-      @limit_remaining < 0
+      @limit_remaining <= 0
     end
 
     def reset_time_reached?
