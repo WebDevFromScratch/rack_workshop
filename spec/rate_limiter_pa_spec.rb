@@ -85,21 +85,21 @@ describe Rack::RateLimiterPa do
     context 'if not specifically set' do
       context 'it shows the correct reset time' do
         it 'right after the initial request' do
-          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(3600)
+          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(Time.now.to_i + 3600)
         end
 
         it 'after some time passed' do
           Timecop.freeze(1800)
           get '/'
 
-          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(1800)
+          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(Time.now.to_i + 1800)
         end
 
         it 'resets after an hour passed' do
           Timecop.freeze(3650)
           get '/'
 
-          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(3600)
+          expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(Time.now.to_i + 3600)
         end
       end
     end
@@ -108,7 +108,7 @@ describe Rack::RateLimiterPa do
       let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { reset_in: 1800 }) }
 
       it 'works correctly' do
-        expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(1800)
+        expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(Time.now.to_i + 1800)
       end
     end
   end

@@ -64,7 +64,7 @@ module Rack
     def add_headers(headers)
       add_limit_total_header(headers)
       add_limit_remaining_header(headers)
-      add_limit_reset_left_header(headers)
+      add_limit_reset_header(headers)
     end
 
     def add_limit_total_header(headers)
@@ -75,8 +75,8 @@ module Rack
       headers.merge! 'X-RateLimit-Remaining' => @limit_remaining.to_s
     end
 
-    def add_limit_reset_left_header(headers)
-      headers.merge! 'X-RateLimit-Reset' => @limit_reset_left.to_s
+    def add_limit_reset_header(headers)
+      headers.merge! 'X-RateLimit-Reset' => @limit_reset.to_i.to_s
     end
 
     def set_limits
