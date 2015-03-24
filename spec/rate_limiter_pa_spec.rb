@@ -49,18 +49,29 @@ describe Rack::RateLimiterPa do
       expect(last_response.headers['X-RateLimit-Remaining'].to_i).to eq(19)
     end
 
-    context 'if the limit has been exceeded' do
-      before { 20.times { get '/' } }
+    context 'if the limit has been reached' do
+      before { 19.times { get '/' } }
 
-      it 'does not call the app' do
-        expect(inner_app).not_to receive(:call)
-        get '/'
+      it 'response has a 200 status' do
+        expect(last_response).to be_ok
+        expect(last_response.status).to eq(200)
       end
 
-      it 'response has a 429 status and an appropriate text in the body' do
-        expect(last_response).not_to be_ok
-        expect(last_response.status).to eq(429)
-        expect(last_response.body).to eq('Too many requests')
+      context 'and another request is made' do
+        before do
+          allow(inner_app).to receive(:call)
+          get '/'
+        end
+
+        it 'does not call the app' do
+          expect(inner_app).not_to have_received(:call)
+        end
+
+        it 'response has a 429 status and an appropriate text in the body' do
+          expect(last_response).not_to be_ok
+          expect(last_response.status).to eq(429)
+          expect(last_response.body).to eq('Too many requests')
+        end
       end
     end
   end

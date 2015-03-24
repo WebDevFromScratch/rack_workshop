@@ -99,7 +99,7 @@ module Rack
     end
 
     def limit_reached?
-      @limit_remaining <= 0
+      @limit_remaining < 0
     end
 
     def reset_time_reached?
