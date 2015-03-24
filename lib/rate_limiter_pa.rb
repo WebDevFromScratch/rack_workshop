@@ -20,6 +20,7 @@ module Rack
       set_id_or_unlimited_calls(env)
       if @id
         get_or_create_stored_id(@id)
+        adjust_limit_reset_left
         reset_limits if reset_time_reached?
         adjust_limit_remaining
         update_stored_id(@id)
@@ -103,7 +104,6 @@ module Rack
     end
 
     def reset_time_reached?
-      @limit_reset_left = @limit_reset - Time.now
       @limit_reset_left <= 0
     end
   end
