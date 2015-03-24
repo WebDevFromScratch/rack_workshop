@@ -23,7 +23,7 @@ describe Rack::RateLimiterPa do
     end
 
     context 'if specifically set' do
-      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, { limit: 60 })) }
+      let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { limit: 60 }) }
 
       it 'is equal to the set value' do
         expect(last_response.headers['X-RateLimit-Limit'].to_i).to eq(60)
@@ -105,7 +105,7 @@ describe Rack::RateLimiterPa do
     end
 
     context 'if specifically set' do
-      let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, reset_in: 1800)) }
+      let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { reset_in: 1800 }) }
 
       it 'works correctly' do
         expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(1800)
@@ -126,7 +126,7 @@ describe Rack::RateLimiterPa do
 
     context 'with a block' do
       context 'that returns nil' do
-        let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app) {}) }
+        let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app) {} }
 
         it 'does not use limit headers' do
           expect(last_response.headers['X-RateLimit-Limit']).to be(nil)
@@ -136,7 +136,7 @@ describe Rack::RateLimiterPa do
       end
 
       context 'that returns something' do
-        let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app) { 'something' }) }
+        let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app) { 'something' } }
 
         it 'uses limit headers' do
           expect(last_response.headers['X-RateLimit-Limit']).to be_truthy
@@ -157,7 +157,7 @@ describe Rack::RateLimiterPa do
   describe 'Custom store' do
     let(:reset_in) { Time.now + 1800 }
     let(:store) { double(:store, get: { limit_remaining: 10, limit_reset: reset_in }, set: nil) }
-    let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app, { store: store }) { 'something' }) }
+    let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { store: store }) { 'something' } }
     before { Timecop.freeze }
 
     it 'correctly gets the id from the store' do
