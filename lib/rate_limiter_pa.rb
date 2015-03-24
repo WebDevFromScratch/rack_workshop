@@ -20,12 +20,14 @@ module Rack
 
     def call(env)
       set_id_or_unlimited_calls(env)
-      get_or_create_stored_id(@id)
-      reset_limits if reset_time_reached?
-      adjust_limit_remaining
-      update_stored_id(@id)
+      if @id
+        get_or_create_stored_id(@id)
+        reset_limits if reset_time_reached?
+        adjust_limit_remaining
+        update_stored_id(@id)
+        return [429, {}, ['Too many requests']] if limit_reached?
+      end
 
-      return [429, {}, ['Too many requests']] if limit_reached?
       status, headers, response = @app.call(env)
       add_headers(headers) unless unlimited_calls?
       [status, headers, response]
@@ -33,7 +35,7 @@ module Rack
 
     def set_id_or_unlimited_calls(env)
       @id = @block.call(env)
-      set_unlimited_calls if @id == nil
+      set_unlimited_calls unless @id
     end
 
     def set_unlimited_calls
