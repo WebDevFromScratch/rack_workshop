@@ -1,41 +1,39 @@
 require 'rate_limiter_pa/version'
 require 'rate_limiter_pa/default_store'
 
+require 'pry'
+
 module Rack
   class RateLimiterPa
+    DEFAULT_BLOCK = Proc.new { |env| env['REMOTE_ADDR'] }
+
     def initialize(app, options = {}, &block)
       options = { limit: 20, reset_in: 3600, store: DefaultStore.new }.merge(options)
+
       @app = app
       @limit_total = options[:limit].to_i
       @reset_in = options[:reset_in].to_i
       @limit_reset = Time.now + @reset_in
-      @block = block
+      @block = block || DEFAULT_BLOCK
       @store = options[:store]
     end
 
     def call(env)
-      if @block && @block.call == nil
-        set_unlimited_calls
-      elsif @block
-        set_id_as_token(env)
-      else
-        set_id_as_ip(env)
-      end
-
-      get_or_set_id_variables(env)
+      set_id_or_unlimited_calls(env)
+      get_or_create_stored_id(env)
       reset_limits if reset_time_reached?
       adjust_limit_remaining
+      update_stored_id
 
       return [429, {}, ['Too many requests']] if limit_reached?
       status, headers, response = @app.call(env)
-
-      if unlimited_calls?
-        return [status, headers, response]
-      else
-        add_headers(headers)
-      end
-
+      add_headers(headers) unless unlimited_calls?
       [status, headers, response]
+    end
+
+    def set_id_or_unlimited_calls(env)
+      @id = @block.call(env)
+      set_unlimited_calls if @id == nil
     end
 
     def set_unlimited_calls
@@ -46,15 +44,7 @@ module Rack
       @unlimited_calls
     end
 
-    def set_id_as_token(env)
-      @id = @block.call
-    end
-
-    def set_id_as_ip(env)
-      @id = env['REMOTE_ADDR'] || 0
-    end
-
-    def get_or_set_id_variables(env)
+    def get_or_create_stored_id(env)
       if @store.get(@id)
         @current_id = @store.get(@id)
       else
@@ -63,8 +53,12 @@ module Rack
         @current_id = @store.get(@id)
       end
 
-      @limit_remaining = @current_id[:limit_remaining]
-      @limit_reset = @current_id[:limit_reset]
+      set_limits
+    end
+
+    def update_stored_id
+      @current_id[:limit_remaining] = @limit_remaining
+      @current_id[:limit_reset] = @limit_reset
     end
 
     def add_headers(headers)
@@ -85,6 +79,11 @@ module Rack
       headers.merge! 'X-RateLimit-Reset' => @limit_reset_left.to_s
     end
 
+    def set_limits
+      @limit_remaining = @current_id[:limit_remaining]
+      @limit_reset = @current_id[:limit_reset]
+    end
+
     def reset_limits
       @limit_reset = Time.now + @reset_in
       @limit_remaining = @limit_total
@@ -93,12 +92,10 @@ module Rack
 
     def adjust_limit_remaining
       @limit_remaining -= 1
-      @current_id[:limit_remaining] = @limit_remaining
     end
 
     def adjust_limit_reset_left
       @limit_reset_left = @limit_reset - Time.now
-      @current_id[:limit_reset] = @limit_reset
     end
 
     def limit_reached?
