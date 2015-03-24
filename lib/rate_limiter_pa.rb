@@ -20,10 +20,10 @@ module Rack
 
     def call(env)
       set_id_or_unlimited_calls(env)
-      get_or_create_stored_id(env)
+      get_or_create_stored_id(@id)
       reset_limits if reset_time_reached?
       adjust_limit_remaining
-      update_stored_id
+      update_stored_id(@id)
 
       return [429, {}, ['Too many requests']] if limit_reached?
       status, headers, response = @app.call(env)
@@ -44,21 +44,21 @@ module Rack
       @unlimited_calls
     end
 
-    def get_or_create_stored_id(env)
-      if @store.get(@id)
-        @current_id = @store.get(@id)
+    def get_or_create_stored_id(id)
+      if @store.get(id)
+        @current_id = @store.get(id)
       else
         id_vars = { limit_remaining: @limit_total, limit_reset: @limit_reset }
-        @store.set(@id, id_vars)
-        @current_id = @store.get(@id)
+        @store.set(id, id_vars)
+        @current_id = @store.get(id)
       end
 
       set_limits
     end
 
-    def update_stored_id
-      @current_id[:limit_remaining] = @limit_remaining
-      @current_id[:limit_reset] = @limit_reset
+    def update_stored_id(id)
+      id_vars = { limit_remaining: @limit_remaining, limit_reset: @limit_reset }
+      @store.set(id, id_vars)
     end
 
     def add_headers(headers)
