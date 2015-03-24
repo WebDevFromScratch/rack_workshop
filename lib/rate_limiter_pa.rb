@@ -1,8 +1,6 @@
 require 'rate_limiter_pa/version'
 require 'rate_limiter_pa/default_store'
 
-require 'pry'
-
 module Rack
   class RateLimiterPa
     DEFAULT_BLOCK = Proc.new { |env| env['REMOTE_ADDR'] }

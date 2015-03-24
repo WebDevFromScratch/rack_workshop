@@ -4,7 +4,7 @@ class DefaultStore
   end
 
   def get(attr)
-    @data[attr]
+    @data[attr].dup if @data.key?(attr)
   end
 
   def set(attr, value)
