@@ -7,7 +7,8 @@ describe Rack::RateLimiterPa do
   include Rack::Test::Methods
 
   let(:inner_app) { lambda { |env| [200, {'Content-Type' => 'text/plain'}, ['OK']]} }
-  let(:app) { Rack::Lint.new(Rack::RateLimiterPa.new(inner_app)) }
+  let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app) }
+  let(:app) { Rack::Lint.new(rate_limiter_app) }
   before { get '/' }
 
   it 'response should be okay' do
