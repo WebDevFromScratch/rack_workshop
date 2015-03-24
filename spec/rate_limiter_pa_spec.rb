@@ -81,7 +81,7 @@ describe Rack::RateLimiterPa do
     context 'if specifically set' do
       let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { reset_in: 1800 }) }
 
-      it 'works correctly' do
+      it 'shows the correct reset time' do
         expect(last_response.headers['X-RateLimit-Reset'].to_f).to be_within(0.1).of(Time.now.to_i + 1800)
       end
     end
