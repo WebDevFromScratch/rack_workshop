@@ -19,7 +19,7 @@ module Rack
     def call(env)
       set_id(env)
       unless id_nil?
-        set_limits(@id)
+        set_limits
         reset_limits if reset_time_reached?
         adjust_limit_remaining
         store_client(@id, @limit_remaining)
@@ -68,9 +68,9 @@ module Rack
       headers.merge! 'X-RateLimit-Reset' => @limit_reset_at.to_i.to_s
     end
 
-    def set_limits(id)
-      @limit_remaining = get_current_client(id)[:limit_remaining]
-      @limit_reset_at = get_current_client(id)[:limit_reset]
+    def set_limits
+      @limit_remaining = get_current_client(@id)[:limit_remaining]
+      @limit_reset_at = get_current_client(@id)[:limit_reset]
     end
 
     def reset_limits
