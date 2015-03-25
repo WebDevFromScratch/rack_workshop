@@ -18,7 +18,7 @@ module Rack
 
     def call(env)
       set_id(env)
-      unless unlimited_calls?
+      unless id_nil?
         set_limits(@id)
         reset_limits if reset_time_reached?
         adjust_limit_remaining
@@ -26,14 +26,14 @@ module Rack
         return [429, {}, ['Too many requests']] if limit_reached?
       end
 
-      @app.call(env).tap { |status, headers, body| add_headers(headers) unless unlimited_calls? }
+      @app.call(env).tap { |status, headers, body| add_headers(headers) unless id_nil? }
     end
 
     def set_id(env)
       @id = @block.call(env)
     end
 
-    def unlimited_calls?
+    def id_nil?
       @id.nil?
     end
 
