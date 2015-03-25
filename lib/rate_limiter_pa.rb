@@ -26,7 +26,7 @@ module Rack
         return [429, {}, ['Too many requests']] if limit_reached?
       end
 
-      @app.call(env).tap { |env| add_headers(env[1]) unless unlimited_calls? }
+      @app.call(env).tap { |status, headers, body| add_headers(headers) unless unlimited_calls? }
     end
 
     def set_id(env)
@@ -34,7 +34,7 @@ module Rack
     end
 
     def unlimited_calls?
-      true unless @id
+      @id.nil?
     end
 
     def get_current_client(id)
