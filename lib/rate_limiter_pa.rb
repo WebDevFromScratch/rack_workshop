@@ -18,7 +18,7 @@ module Rack
 
     def call(env)
       set_id(env)
-      if @id
+      unless unlimited_calls?
         set_limits(@id)
         reset_limits if reset_time_reached?
         adjust_limit_remaining
