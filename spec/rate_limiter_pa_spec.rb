@@ -44,10 +44,10 @@ describe Rack::RateLimiterPa do
 
     it 'resets after an hour after the first request' do
       3.times { get '/' }
-      Timecop.freeze(3650)
-      get '/'
-
-      expect(last_response.headers['X-RateLimit-Remaining'].to_i).to eq(19)
+      Timecop.freeze(3650) do
+        get '/'
+        expect(last_response.headers['X-RateLimit-Remaining'].to_i).to eq(19)
+      end
     end
   end
 
@@ -63,17 +63,17 @@ describe Rack::RateLimiterPa do
         end
 
         it 'after some time passed' do
-          Timecop.freeze(1800)
-          get '/'
-
-          expect(last_response.headers['X-RateLimit-Reset'].to_i).to equal(Time.now.to_i + 1800)
+          Timecop.freeze(1800) do
+            get '/'
+            expect(last_response.headers['X-RateLimit-Reset'].to_i).to equal(Time.now.to_i + 1800)
+          end
         end
 
-        it 'resets after an hour passed' do
-          Timecop.freeze(3650)
-          get '/'
-
-          expect(last_response.headers['X-RateLimit-Reset'].to_i).to equal(Time.now.to_i + 3600)
+        it 'after more time than the limit passed' do
+          Timecop.freeze(3650) do
+            get '/'
+            expect(last_response.headers['X-RateLimit-Reset'].to_i).to equal(Time.now.to_i + 3600)
+          end
         end
       end
     end
@@ -159,6 +159,7 @@ describe Rack::RateLimiterPa do
     let(:store) { double(:store, get: { limit_remaining: 10, limit_reset: reset_in }, set: nil) }
     let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { store: store }) { 'something' } }
     before { Timecop.freeze }
+    after { Timecop.return }
 
     it 'correctly gets the id from the store' do
       expect(store).to receive(:get).with("something")
