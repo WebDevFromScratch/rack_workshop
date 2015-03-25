@@ -19,7 +19,7 @@ module Rack
     def call(env)
       set_id(env)
       if @id
-        get_or_create_stored_id(@id)
+        set_limits(@id)
         reset_limits if reset_time_reached?
         adjust_limit_remaining
         update_stored_id(@id)
@@ -37,16 +37,17 @@ module Rack
       true unless @id
     end
 
-    def get_or_create_stored_id(id)
-      if @store.get(id)
-        @current_id = @store.get(id)
-      else
-        id_vars = { limit_remaining: @limit_total, limit_reset: @limit_reset }
-        @store.set(id, id_vars)
-        @current_id = @store.get(id)
+    def create_client(id)
+      id_vars = { limit_remaining: @limit_total, limit_reset: @limit_reset }
+      @store.set(id, id_vars)
+    end
+
+    def get_current_client(id)
+      unless @store.get(id)
+        create_client(id)
       end
 
-      set_limits
+      @store.get(id)
     end
 
     def update_stored_id(id)
@@ -72,9 +73,9 @@ module Rack
       headers.merge! 'X-RateLimit-Reset' => @limit_reset.to_i.to_s
     end
 
-    def set_limits
-      @limit_remaining = @current_id[:limit_remaining]
-      @limit_reset = @current_id[:limit_reset]
+    def set_limits(id)
+      @limit_remaining = get_current_client(id)[:limit_remaining]
+      @limit_reset = get_current_client(id)[:limit_reset]
     end
 
     def reset_limits
