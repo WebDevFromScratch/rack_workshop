@@ -73,7 +73,7 @@ module Rack
         @limit_remaining = get_current_client[:limit_remaining]
         @limit_reset_at = get_current_client[:limit_reset_at]
       else
-        @limit_remaining = @limit_total
+        reset_limits
       end
     end
 
