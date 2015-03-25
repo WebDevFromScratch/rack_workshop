@@ -1,8 +1,6 @@
 require 'rate_limiter_pa/version'
 require 'rate_limiter_pa/default_store'
 
-require 'pry'
-
 module Rack
   class RateLimiterPa
     DEFAULT_BLOCK = Proc.new { |env| env['REMOTE_ADDR'] }
@@ -22,7 +20,6 @@ module Rack
       set_id(env)
       if @id
         get_or_create_stored_id(@id)
-        adjust_limit_reset_left
         reset_limits if reset_time_reached?
         adjust_limit_remaining
         update_stored_id(@id)
@@ -83,15 +80,14 @@ module Rack
     def reset_limits
       @limit_reset = Time.now + @reset_in
       @limit_remaining = @limit_total
-      adjust_limit_reset_left
     end
 
     def adjust_limit_remaining
       @limit_remaining -= 1
     end
 
-    def adjust_limit_reset_left
-      @limit_reset_left = @limit_reset - Time.now
+    def limit_reset_left
+      @limit_reset - Time.now
     end
 
     def limit_reached?
@@ -99,7 +95,7 @@ module Rack
     end
 
     def reset_time_reached?
-      @limit_reset_left <= 0
+      limit_reset_left <= 0
     end
   end
 end
