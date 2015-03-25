@@ -11,7 +11,7 @@ module Rack
       @app = app
       @limit_total = options[:limit].to_i
       @reset_in = options[:reset_in].to_i
-      @limit_reset = Time.now + @reset_in
+      @limit_reset_at = Time.now + @reset_in
       @block = block || DEFAULT_BLOCK
       @store = options[:store]
     end
@@ -46,7 +46,7 @@ module Rack
     end
 
     def store_client(id, limit_remaining)
-      client = { limit_remaining: limit_remaining, limit_reset: @limit_reset }
+      client = { limit_remaining: limit_remaining, limit_reset: @limit_reset_at }
       @store.set(id, client)
     end
 
@@ -65,16 +65,16 @@ module Rack
     end
 
     def add_limit_reset_header(headers)
-      headers.merge! 'X-RateLimit-Reset' => @limit_reset.to_i.to_s
+      headers.merge! 'X-RateLimit-Reset' => @limit_reset_at.to_i.to_s
     end
 
     def set_limits(id)
       @limit_remaining = get_current_client(id)[:limit_remaining]
-      @limit_reset = get_current_client(id)[:limit_reset]
+      @limit_reset_at = get_current_client(id)[:limit_reset]
     end
 
     def reset_limits
-      @limit_reset = Time.now + @reset_in
+      @limit_reset_at = Time.now + @reset_in
       @limit_remaining = @limit_total
     end
 
@@ -83,7 +83,7 @@ module Rack
     end
 
     def limit_reset_left
-      @limit_reset - Time.now
+      @limit_reset_at - Time.now
     end
 
     def limit_reached?
