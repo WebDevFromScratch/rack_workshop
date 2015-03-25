@@ -1,6 +1,8 @@
 require 'rate_limiter_pa/version'
 require 'rate_limiter_pa/default_store'
 
+require 'pry'
+
 module Rack
   class RateLimiterPa
     DEFAULT_BLOCK = Proc.new { |env| env['REMOTE_ADDR'] }
@@ -17,7 +19,7 @@ module Rack
     end
 
     def call(env)
-      set_id_or_unlimited_calls(env)
+      set_id(env)
       if @id
         get_or_create_stored_id(@id)
         adjust_limit_reset_left
@@ -30,17 +32,12 @@ module Rack
       @app.call(env).tap { |env| add_headers(env[1]) unless unlimited_calls? }
     end
 
-    def set_id_or_unlimited_calls(env)
+    def set_id(env)
       @id = @block.call(env)
-      set_unlimited_calls unless @id
-    end
-
-    def set_unlimited_calls
-      @unlimited_calls = true
     end
 
     def unlimited_calls?
-      @unlimited_calls
+      true unless @id
     end
 
     def get_or_create_stored_id(id)
