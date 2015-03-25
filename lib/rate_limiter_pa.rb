@@ -22,7 +22,7 @@ module Rack
         set_limits(@id)
         reset_limits if reset_time_reached?
         adjust_limit_remaining
-        update_stored_id(@id)
+        store_client(@id, @limit_remaining)
         return [429, {}, ['Too many requests']] if limit_reached?
       end
 
@@ -37,22 +37,17 @@ module Rack
       true unless @id
     end
 
-    def create_client(id)
-      id_vars = { limit_remaining: @limit_total, limit_reset: @limit_reset }
-      @store.set(id, id_vars)
-    end
-
     def get_current_client(id)
       unless @store.get(id)
-        create_client(id)
+        store_client(id, @limit_total)
       end
 
       @store.get(id)
     end
 
-    def update_stored_id(id)
-      id_vars = { limit_remaining: @limit_remaining, limit_reset: @limit_reset }
-      @store.set(id, id_vars)
+    def store_client(id, limit_remaining)
+      client = { limit_remaining: limit_remaining, limit_reset: @limit_reset }
+      @store.set(id, client)
     end
 
     def add_headers(headers)
