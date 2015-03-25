@@ -37,16 +37,16 @@ module Rack
       @id.nil?
     end
 
-    def get_current_client(id)
-      unless @store.get(id)
-        store_client(id, @limit_total)
-      end
+    def client_already_stored?
+      !!@store.get(@id)
+    end
 
-      @store.get(id)
+    def get_current_client
+      @store.get(@id)
     end
 
     def store_client(id, limit_remaining)
-      client = { limit_remaining: limit_remaining, limit_reset: @limit_reset_at }
+      client = { limit_remaining: limit_remaining, limit_reset_at: @limit_reset_at }
       @store.set(id, client)
     end
 
@@ -69,8 +69,12 @@ module Rack
     end
 
     def set_limits
-      @limit_remaining = get_current_client(@id)[:limit_remaining]
-      @limit_reset_at = get_current_client(@id)[:limit_reset]
+      if client_already_stored?
+        @limit_remaining = get_current_client[:limit_remaining]
+        @limit_reset_at = get_current_client[:limit_reset_at]
+      else
+        @limit_remaining = @limit_total
+      end
     end
 
     def reset_limits

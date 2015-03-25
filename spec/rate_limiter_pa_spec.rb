@@ -156,7 +156,7 @@ describe Rack::RateLimiterPa do
 
   describe 'Custom store' do
     let(:reset_in) { Time.now + 1800 }
-    let(:store) { double(:store, get: { limit_remaining: 10, limit_reset: reset_in }, set: nil) }
+    let(:store) { double(:store, get: { limit_remaining: 10, limit_reset_at: reset_in }, set: nil) }
     let(:rate_limiter_app) { Rack::RateLimiterPa.new(inner_app, { store: store }) { 'something' } }
     before { Timecop.freeze }
     after { Timecop.return }
@@ -167,7 +167,7 @@ describe Rack::RateLimiterPa do
     end
 
     it 'correctly updates the id to the store' do
-      expect(store).to receive(:set).with("something", { limit_remaining: 9, limit_reset: reset_in })
+      expect(store).to receive(:set).with("something", { limit_remaining: 9, limit_reset_at: reset_in })
       get '/'
     end
   end
