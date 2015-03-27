@@ -3,7 +3,7 @@ require 'rate_limiter_pa/default_store'
 
 module Rack
   class RateLimiterPa
-    DEFAULT_BLOCK = Proc.new { |env| env['REMOTE_ADDR'] || env['X_FORWARDED_FOR'] }
+    DEFAULT_BLOCK = Proc.new { |env| env['X_FORWARDED_FOR'] || env['REMOTE_ADDR'] }
 
     def initialize(app, options = {}, &block)
       options = { limit: 20, reset_in: 3600, store: DefaultStore.new }.merge(options)
